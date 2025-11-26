@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 import { BASE_URL } from '../src/config';
 
 export default function Perfil() {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [usuario, setUsuario] = useState(null); // nombre de usuario (string) almacenado localmente
   const [userData, setUserData] = useState(null); // objeto usuario obtenido del backend o almacenado
@@ -35,6 +37,12 @@ export default function Perfil() {
         const storedToken = await AsyncStorage.getItem('token');
         setUsuario(storedUsuario);
         setToken(storedToken);
+
+        // Si no hay sesión, forzar al login
+        if (!storedToken && !storedUsuario) {
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          return;
+        }
 
         // Intentar obtener datos del backend usando token (si existe)
         if (storedToken) {

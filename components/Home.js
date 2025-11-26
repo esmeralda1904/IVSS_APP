@@ -23,12 +23,29 @@ export default function Home() {
     (async () => {
       try {
         const u = await AsyncStorage.getItem('usuario');
+        const token = await AsyncStorage.getItem('token');
+        // si no hay token ni usuario, forzar volver al login
+        if (!token && !u) {
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+          return;
+        }
         if (u) setUsuario(u);
       } catch (err) {
         console.error('Error leyendo usuario:', err.message);
       }
     })();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('usuario');
+    } catch (e) {
+      console.warn('Error al limpiar sesión:', e.message || e);
+    }
+    // Reiniciar el stack para que el usuario no pueda volver con el botón atrás
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+  };
 
   return (
     <LinearGradient
@@ -109,7 +126,7 @@ export default function Home() {
     <Text style={styles.menuLabel}>Perfil</Text>
   </TouchableOpacity>
 
-  <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("Login")}>
+  <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
     <Ionicons name="exit-outline" size={30} color="#FFFFFF" />
     <Text style={styles.menuLabel}>Salir</Text>
   </TouchableOpacity>
