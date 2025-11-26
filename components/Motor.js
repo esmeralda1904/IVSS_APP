@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,101 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
 
 export default function BloqueoMotor() {
   const navigation = useNavigation();
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [usuarioActual, setUsuarioActual] = useState(null);
+  const [isBlocked, setIsBlocked] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const u = await AsyncStorage.getItem('usuario');
+        if (u) setUsuarioActual(u);
+      } catch (err) {
+        console.warn('No se pudo leer usuario de AsyncStorage', err.message);
+      }
+    })();
+  }, []);
+
+  const handleApagar = async () => {
+    // obtener usuario almacenado (si no se cargó aún)
+    let stored = usuarioActual;
+    if (!stored) {
+      try {
+        stored = await AsyncStorage.getItem('usuario');
+      } catch (err) {
+        console.warn('Error leyendo usuario:', err.message);
+      }
+    }
+
+    // Intentar obtener la contraseña guardada en registro local (registro_usuario)
+    let registro = null;
+    try {
+      const raw = await AsyncStorage.getItem('registro_usuario');
+      if (raw) registro = JSON.parse(raw);
+    } catch (err) {
+      console.warn('Error leyendo registro_usuario:', err.message);
+    }
+
+    // Reunir candidatos de contraseña para comparar
+    const candidatos = [];
+    if (registro) {
+      if (registro.contrasena) candidatos.push(registro.contrasena);
+      // si la estructura es { usuario: { contrasena: ... } }
+      if (registro.usuario && typeof registro.usuario === 'object' && registro.usuario.contrasena) candidatos.push(registro.usuario.contrasena);
+    }
+    // fallback: el valor 'usuario' guardado (puede ser username) — se añade solo como último recurso
+    if (stored) candidatos.push(stored);
+
+    const coincide = candidatos.some(c => c && password === c);
+    if (!password || !coincide) {
+      Alert.alert('Error', 'Contraseña incorrecta');
+      return;
+    }
+
+    // Pregunta de confirmación según el estado (bloqueado o no)
+    if (!isBlocked) {
+      Alert.alert(
+        'Confirmación',
+        '¿Seguro que quieres bloquear el motor?',
+        [
+          { text: 'No', style: 'cancel' },
+          {
+            text: 'Sí',
+            onPress: () => {
+              setIsBlocked(true);
+              Alert.alert('Motor bloqueado');
+              setPassword('');
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    } else {
+      // desbloquear
+      Alert.alert(
+        'Confirmación',
+        '¿Seguro que quieres desbloquear el motor?',
+        [
+          { text: 'No', style: 'cancel' },
+          {
+            text: 'Sí',
+            onPress: () => {
+              setIsBlocked(false);
+              Alert.alert('Motor desbloqueado');
+              setPassword('');
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    }
+  };
 
   return (
     <LinearGradient
@@ -39,18 +130,26 @@ export default function BloqueoMotor() {
           </Text>
 
           {/* INPUT DE CONTRASEÑA */}
-          <TextInput
-            style={styles.input}
-            placeholder="Ingrese su contraseña"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.inputText}
+              placeholder="Ingrese su contraseña"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(s => !s)} style={styles.eyeButton} accessibilityLabel="Mostrar contraseña">
+              <Ionicons name={showPassword ? 'eye' : 'eye-off'} size={22} color="#8c8c8c" />
+            </TouchableOpacity>
+          </View>
 
-          {/* BOTÓN BLOQUEAR */}
-          <TouchableOpacity style={styles.mainButton}>
-            <Ionicons name="power-outline" size={26} color="#FFF" />
-            <Text style={styles.mainButtonText}>Apagar Motor</Text>
+          {/* BOTÓN BLOQUEAR / DESBLOQUEAR */}
+          <TouchableOpacity
+            style={[styles.mainButton, isBlocked ? styles.blockedButton : null]}
+            onPress={handleApagar}
+          >
+            <Ionicons name={isBlocked ? 'lock-closed' : 'power-outline'} size={26} color="#FFF" />
+            <Text style={styles.mainButtonText}>{isBlocked ? 'Desbloquear Motor' : 'Apagar Motor'}</Text>
           </TouchableOpacity>
 
           {/* BOTÓN REGRESAR */}
@@ -150,5 +249,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     marginLeft: 8,
+  },
+  inputContainer: {
+    borderWidth: 1,
+    borderColor: "#D1D9E9",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 20,
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputText: {
+    flex: 1,
+    fontSize: 15,
+  },
+  eyeButton: {
+    padding: 6,
+  },
+  blockedButton: {
+    backgroundColor: '#C53030',
   },
 });

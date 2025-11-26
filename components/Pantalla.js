@@ -16,6 +16,7 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from "../src/config";
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Pantalla() {
   const navigation = useNavigation();
@@ -162,7 +163,12 @@ export default function Pantalla() {
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={["#405A9F", "#A1A9E9", "#FFFFFF"]}
+      start={[0, 0]}
+      end={[0, 1]}
+      style={styles.container}
+    >
       <Text style={styles.title}>Solicitudes ARCO</Text>
 
       <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: 20 }}>
@@ -182,7 +188,7 @@ export default function Pantalla() {
           contentContainerStyle={{ padding: 20 }}
           onRefresh={handleRefresh}
           refreshing={refreshing}
-          ListEmptyComponent={<Text style={{ textAlign: 'center', color: '#666' }}>No hay solicitudes</Text>}
+          ListEmptyComponent={<Text style={{ textAlign: 'center', color: '#ffffffff' }}>No hay solicitudes</Text>}
         />
       )}
 
@@ -231,13 +237,13 @@ export default function Pantalla() {
           </View>
         </ScrollView>
       </Modal>
-    </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F4F6FA" },
-  title: { fontSize: 22, fontWeight: "bold", color: "#2E2E2E", textAlign: 'center', marginVertical: 16 },
+  container: { flex: 1, paddingTop: 40, backgroundColor: 'transparent', alignItems: 'center' },
+  title: { fontSize: 22, fontWeight: "bold", color: "#FFFFFF", textAlign: 'center', marginTop: 36, marginBottom: 12 },
   backButton: {
     position: 'absolute',
     bottom: 24,

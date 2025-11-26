@@ -18,7 +18,22 @@ export default function RegistroUsuario() {
   const [telefono, setTelefono] = useState("");
   const [usuario, setUsuario] = useState("");
   const [contrasena, setContrasena] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
   const [entidad, setEntidad] = useState("");
+
+  const onPasswordChange = (text) => {
+    setContrasena(text);
+    // regex: min 8, at least one uppercase, at least one digit, only A-Z / a-z and digits
+    const pwRegex = /^(?=.{8,}$)(?=.*[A-Z])(?=.*\d)[A-Za-z0-9]+$/;
+    if (!text) {
+      setPasswordError("");
+    } else if (!pwRegex.test(text)) {
+      setPasswordError('La contraseña debe tener mínimo 8 caracteres, al menos una mayúscula, al menos un número y sólo letras (A-Z) y dígitos.');
+    } else {
+      setPasswordError("");
+    }
+  };
   const [municipio, setMunicipio] = useState("");
   // Vehículo opcional para crear junto con el usuario
   const [includeVehiculo, setIncludeVehiculo] = useState(false);
@@ -47,6 +62,12 @@ export default function RegistroUsuario() {
 
       if (includeVehiculo && (!marca || !modelo || !placas)) {
         Alert.alert('Datos de vehículo incompletos', 'Completa Marca, Modelo y Placas para registrar el vehículo ahora.');
+        return;
+      }
+
+      // Seguridad extra: evitar continuar si la contraseña actual es inválida
+      if (contrasena && passwordError) {
+        Alert.alert('Contraseña inválida', passwordError);
         return;
       }
 
@@ -181,13 +202,26 @@ export default function RegistroUsuario() {
             onChangeText={setUsuario}
             autoCapitalize="none"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Contraseña"
-            value={contrasena}
-            onChangeText={setContrasena}
-            secureTextEntry={true}
-          />
+          <View style={{ marginBottom: 6 }}>
+            <View style={{ position: 'relative' }}>
+              <TextInput
+                style={[styles.input, { paddingRight: 45 }]}
+                placeholder="Contraseña"
+                value={contrasena}
+                onChangeText={onPasswordChange}
+                secureTextEntry={!passwordVisible}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                onPress={() => setPasswordVisible(!passwordVisible)}
+                style={{ position: 'absolute', right: 12, top: 12 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name={passwordVisible ? 'eye-off' : 'eye'} size={22} color="#666" />
+              </TouchableOpacity>
+            </View>
+            {passwordError ? <Text style={{ color: '#cc3333', fontSize: 13, marginTop: 6 }}>{passwordError}</Text> : null}
+          </View>
           <TextInput
             style={styles.input}
             placeholder="Entidad"
@@ -251,7 +285,7 @@ export default function RegistroUsuario() {
             <Text style={styles.secondaryButtonText}>Retroceder</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.mainButton, loading && styles.disabledButton]} onPress={handleNext} disabled={loading}>
+          <TouchableOpacity style={[styles.mainButton, (loading || passwordError) && styles.disabledButton]} onPress={handleNext} disabled={loading || !!passwordError}>
             {loading ? (
               <ActivityIndicator size="small" color="#FFF" />
             ) : (

@@ -166,21 +166,33 @@ export default function Perfil() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#4D5A9F" />
+        <ActivityIndicator size="large" color={stylesVars.primary} />
         <Text style={{ marginTop: 12 }}>Cargando perfil...</Text>
       </View>
     );
   }
 
+  const fullName = userData?.nombre_usuario ? `${userData.nombre_usuario.nombre} ${userData.nombre_usuario.ap_pat || ''}` : usuario || 'Usuario';
+  const email = userData?.correo ? (Array.isArray(userData.correo) ? userData.correo[0] : userData.correo) : '';
+
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <View style={styles.avatar}>{/* initials */}
-          <Text style={styles.avatarText}>{getInitials()}</Text>
-        </View>
-        <View style={styles.headerInfo}>
-          <Text style={styles.title}>{userData?.nombre_usuario ? `${userData.nombre_usuario.nombre} ${userData.nombre_usuario.ap_pat || ''}` : usuario || 'Usuario'}</Text>
-          <Text style={styles.subtitleSmall}>{userData?.correo ? userData.correo[0] : ''}</Text>
+      <View style={styles.headerBackground}>
+        <View style={styles.headerInner}>
+          <View style={styles.avatarWrap}>
+            <View style={styles.avatar}>{/* initials */}
+              <Text style={styles.avatarText}>{getInitials()}</Text>
+            </View>
+          </View>
+
+          <View style={styles.headerInfo}>
+            <Text style={styles.title}>{fullName}</Text>
+            <Text style={styles.subtitleSmall}>{email}</Text>
+          </View>
+
+          <TouchableOpacity style={styles.editButton} onPress={() => Alert.alert('Editar', 'Función de editar pendiente')}>
+            <Text style={styles.editButtonText}>Editar</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -204,24 +216,22 @@ export default function Perfil() {
             data={vehiculos}
             keyExtractor={(item, idx) => item._id ? item._id : `${item.placas}-${idx}`}
             renderItem={({ item }) => (
-              <View style={styles.vehiculoCard}>
-                <View style={styles.vehiculoLeft}>
-                  <View style={styles.brandCircle}><Text style={styles.brandLetter}>{item.marca ? item.marca.substring(0,1).toUpperCase() : 'V'}</Text></View>
-                </View>
+              <TouchableOpacity style={styles.vehiculoCard} activeOpacity={0.8} onPress={() => Alert.alert('Vehículo', `${item.marca} ${item.modelo}\nPlacas: ${item.placas}`)}>
+                <View style={styles.brandCircle}><Text style={styles.brandLetter}>{item.marca ? item.marca.substring(0,1).toUpperCase() : 'V'}</Text></View>
                 <View style={styles.vehiculoMiddle}>
                   <Text style={styles.vehiculoText}>{item.marca} {item.modelo}</Text>
                   <Text style={styles.small}>Placas: {item.placas}</Text>
                 </View>
                 <View style={styles.vehiculoRight}>
-                  <Text style={styles.small}>{item.VIN ? 'VIN' : ''}</Text>
+                  <Text style={styles.chevron}>›</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             )}
           />
         )}
 
         <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
-          <Text style={styles.addButtonText}>Agregar otro vehículo</Text>
+          <Text style={styles.addButtonText}>Agregar vehículo</Text>
         </TouchableOpacity>
       </View>
 
@@ -229,18 +239,22 @@ export default function Perfil() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Nuevo vehículo</Text>
-            <TextInput placeholder="Marca" style={styles.input} value={marca} onChangeText={t=>setMarca(t)} />
-            <TextInput placeholder="Modelo" style={styles.input} value={modelo} onChangeText={t=>setModelo(t)} />
-            <TextInput placeholder="Placas" style={styles.input} value={placas} onChangeText={t=>setPlacas(t.toUpperCase())} autoCapitalize="characters" />
-            <TextInput placeholder="VIN (opcional)" style={styles.input} value={vin} onChangeText={t=>setVin(t.toUpperCase())} autoCapitalize="characters" />
+            <Text style={styles.inputLabel}>Marca</Text>
+            <TextInput placeholder="Ej. Toyota" style={styles.input} value={marca} onChangeText={t=>setMarca(t)} />
+            <Text style={styles.inputLabel}>Modelo</Text>
+            <TextInput placeholder="Ej. Corolla" style={styles.input} value={modelo} onChangeText={t=>setModelo(t)} />
+            <Text style={styles.inputLabel}>Placas</Text>
+            <TextInput placeholder="ABC1234" style={styles.input} value={placas} onChangeText={t=>setPlacas(t.toUpperCase())} autoCapitalize="characters" />
+            <Text style={styles.inputLabel}>VIN (opcional)</Text>
+            <TextInput placeholder="1HGCM82633A004352" style={styles.input} value={vin} onChangeText={t=>setVin(t.toUpperCase())} autoCapitalize="characters" />
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#EEE' }]} onPress={() => setModalVisible(false)} disabled={submitting}>
-                <Text style={{ color: '#333' }}>Cancelar</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalVisible(false)} disabled={submitting}>
+                <Text style={styles.cancelText}>Cancelar</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.modalButton, !marca || !modelo || !placas || submitting ? styles.buttonDisabled : null]} onPress={handleAddVehicle} disabled={!marca || !modelo || !placas || submitting}>
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff' }}>Agregar</Text>}
+              <TouchableOpacity style={[styles.modalButton, (!marca || !modelo || !placas || submitting) && styles.buttonDisabled]} onPress={handleAddVehicle} disabled={!marca || !modelo || !placas || submitting}>
+                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.addText}>Agregar</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -250,23 +264,57 @@ export default function Perfil() {
   );
 }
 
+const stylesVars = {
+  primary: '#3650A8',
+  bg: '#F4F6FB',
+  card: '#FFFFFF',
+  muted: '#6B7280',
+};
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 18, backgroundColor: '#F6F8FB' },
+  container: { flex: 1, backgroundColor: stylesVars.bg, padding: 0 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { marginBottom: 12 },
-  title: { fontSize: 26, fontWeight: '700', color: '#1B253B' },
-  subtitle: { fontSize: 14, color: '#4B5A75', marginTop: 4 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, elevation: 3 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', marginBottom: 8 },
-  empty: { color: '#666' },
-  vehiculoRow: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#EEE' },
-  vehiculoText: { fontSize: 16, fontWeight: '600' },
-  small: { fontSize: 12, color: '#666' },
-  addButton: { marginTop: 12, backgroundColor: '#4D5A9F', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
-  addButtonText: { color: '#fff', fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center' },
-  modalCard: { width: '90%', backgroundColor: '#fff', borderRadius: 10, padding: 16 },
-  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#E3E7F0', borderRadius: 8, padding: 10, marginTop: 8 },
-  modalButton: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 8, backgroundColor: '#4D5A9F', alignItems: 'center' },
+  headerBackground: { backgroundColor: stylesVars.primary, paddingBottom: 22, paddingTop: 54 },
+  headerInner: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18 },
+  avatarWrap: { marginRight: 12 },
+  avatar: { width: 76, height: 76, borderRadius: 40, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+  avatarText: { fontSize: 28, fontWeight: '700', color: stylesVars.primary },
+  headerInfo: { flex: 1 },
+  title: { fontSize: 20, fontWeight: '700', color: '#fff' },
+  subtitleSmall: { fontSize: 13, color: '#E8EEF9', marginTop: 4 },
+  editButton: { backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+  editButtonText: { color: '#fff', fontWeight: '600' },
+
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18, marginTop: -18 },
+  statCard: { flex: 1, backgroundColor: stylesVars.card, marginHorizontal: 6, borderRadius: 12, padding: 14, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6, elevation: 3 },
+  statNumber: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  statLabel: { fontSize: 12, color: stylesVars.muted, marginTop: 4 },
+
+  card: { backgroundColor: stylesVars.card, borderRadius: 12, padding: 14, margin: 18, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 2 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginBottom: 10, color: '#111827' },
+  empty: { color: stylesVars.muted },
+
+  vehiculoCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F0F2F7' },
+  brandCircle: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  brandLetter: { color: stylesVars.primary, fontWeight: '700' },
+  vehiculoMiddle: { flex: 1 },
+  vehiculoText: { fontSize: 15, fontWeight: '700', color: '#111827' },
+  small: { fontSize: 12, color: stylesVars.muted },
+  vehiculoRight: { width: 24, alignItems: 'center' },
+  chevron: { fontSize: 22, color: '#CBD5E1' },
+
+  addButton: { marginTop: 12, backgroundColor: stylesVars.primary, paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  addButtonText: { color: '#fff', fontWeight: '700' },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(2,6,23,0.45)', justifyContent: 'center', alignItems: 'center' },
+  modalCard: { width: '92%', backgroundColor: stylesVars.card, borderRadius: 12, padding: 16 },
+  modalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 8, color: '#111827' },
+  inputLabel: { fontSize: 12, color: stylesVars.muted, marginTop: 8 },
+  input: { borderWidth: 1, borderColor: '#EEF2FF', borderRadius: 8, padding: 10, marginTop: 6, backgroundColor: '#FBFCFF' },
+  modalActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
+  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginHorizontal: 6, backgroundColor: stylesVars.primary },
+  cancelButton: { backgroundColor: '#F3F4F6' },
+  cancelText: { color: '#111827', fontWeight: '600' },
+  addText: { color: '#fff', fontWeight: '700' },
+  buttonDisabled: { opacity: 0.6 },
 });
